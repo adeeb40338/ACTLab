@@ -12,7 +12,7 @@ void ACTLabClass::dot(int _pin)
 void ACTLabClass::dash(int _pin)
 {
   digitalWrite(_pin, HIGH);
-  delay(1500);
+  delay(1600);
   digitalWrite(_pin, LOW);
   delay(250);
 }
