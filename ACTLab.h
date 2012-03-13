@@ -1,13 +1,12 @@
 #ifndef ACTLab_h
 #define ACTLab_h
 
-#include <WProgram.h>
+#include <Arduino.h>
 
 class ACTLabClass
 {
   public:
-    void dot(int);
-    void dash(int);
+    void test();
 };
 
 extern ACTLabClass ACTLab;
