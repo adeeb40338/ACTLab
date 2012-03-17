@@ -14,6 +14,7 @@
 ACTLabClass::ACTLabClass () {
 	// Set private properties.
 	MAC(0x90,0xA2,0xDA,0x00,0x7F,0xAB);
+	server(31,170,160,87);
 	_serial = 0;
 }
 
@@ -28,7 +29,16 @@ void ACTLabClass::MAC (byte b0,byte b1,byte b2,byte b3,byte b4,byte b5) {
 	_mac[5] = b5;
 }
 
-// ACTLab.startEthernetClient()
+// ACTLab.server()
+
+void ACTLabClass::server (byte b0,byte b1,byte b2,byte b3) {
+	_server[0] = b0;
+	_server[1] = b1;
+	_server[2] = b2;
+	_server[3] = b3;
+}
+
+// ACTLab.startEthernet()
 
 void ACTLabClass::startEthernet () {
 	_serialPrintln("Starting Ethernet.");
@@ -36,22 +46,22 @@ void ACTLabClass::startEthernet () {
 	_serialPrintln("Ethernet Started.");
 }
 
-// ACTLab.connect()
+// ACTLab.submitData()
 
-void ACTLabClass::connect () {
+void ACTLabClass::submitData (float t,float i,float iE,float o,float oE) {
 	
-	byte server[] = { 31,170,160,87 };
-	String params = "t=0&i=1&iE=2&o=3&oE=6";
+	String params = "t=0&i=1&iE=2&o=3&oE=2";
 	
-	EthernetClient client;
+	static EthernetClient client;
 	
+	//_serialPrintln(_server);
 	_serialPrintln("connecting...");
 	
-	if (client.connect(server, 80)) { // port 80 is the default for http
+	if (client.connect(_server, 80)) { // port 80 is the default for http
 		_serialPrintln("connected");
 		client.print("GET ");
 		client.print("http://actlab.comli.com/application/scripts/recordData.php?");
-		client.print("t=0&i=1&iE=2&o=3&oE=6");
+		client.print("t=0&i=1&iE=2&o=3&oE=2");
 		client.println(" HTTP/1.0");
 		client.println();
 		
