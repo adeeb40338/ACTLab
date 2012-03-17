@@ -1,4 +1,3 @@
-
 // If statement to make sure the ACTLab Library is not
 // included more than once.
 
@@ -9,32 +8,40 @@
 // types and constants of the Arduino language.
 
 #include <Arduino.h>
+#include <Ethernet.h>
 
 // Declare (and spec out) the ACTLabClass class.
-
 class ACTLabClass {
 	
 	// Public methods and properties.
-	
 	public:
-	
 		// Constructor method.
-		
 		ACTLabClass();
 		
 		// Public methods.
-		
+		void MAC(byte b0,byte b1,byte b2,byte b3,byte b4,byte b5);
+		void startEthernet();
+		void connect();
+		void serial(int arg);
 		void serialTest();
 		
 		// Public properties.
-		
-		int qwerty;
 	
 	// Private methods and properties.
-	
-	
+	private:
+		
+		// Private methods.
+		void _serialPrint(char str[]);
+		void _serialPrintln(char str[]);
+		
+		// Private properties.
+		byte _mac[];
+		int _serial;
 	
 };
+
+// Code to remove the need to initialize an ACTLab
+// object in sketch.
 
 extern ACTLabClass ACTLab;
 
