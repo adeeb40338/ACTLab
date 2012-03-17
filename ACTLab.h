@@ -20,6 +20,7 @@ class ACTLabClass {
 		// Public methods.
 		void MAC(byte b0,byte b1,byte b2,byte b3,byte b4,byte b5);
 		void server(byte b0,byte b1,byte b2,byte b3);
+		void HTTP(int arg);
 		void startEthernet();
 		void submitData(double time,double input, double output);
 		void serial(int arg);
@@ -35,6 +36,7 @@ class ACTLabClass {
 		// Private properties.
 		byte _MAC[6];
 		byte _server[4];
+		int _HTTP;
 		int _serial;
 };
 

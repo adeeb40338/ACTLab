@@ -15,6 +15,7 @@ ACTLabClass::ACTLabClass () {
 	// Set private properties.
 	MAC(0x90,0xA2,0xDA,0x00,0x7F,0xAB);
 	server(31,170,160,87);
+	_HTTP = 0;
 	_serial = 0;
 }
 
@@ -36,6 +37,12 @@ void ACTLabClass::server (byte b0,byte b1,byte b2,byte b3) {
 	_server[1] = b1;
 	_server[2] = b2;
 	_server[3] = b3;
+}
+
+// ACTLab.HTTP()
+
+void ACTLabClass::HTTP (int arg) {
+	if (arg==0||arg==1) {_HTTP = arg;};
 }
 
 // ACTLab.startEthernet()
@@ -87,18 +94,31 @@ void ACTLabClass::submitData (double time,double input, double output) {
 	if (client.connect(_server, 80)) { // Port 80 is the default for HTTP.
 		_serialPrintln("Connected to server.");
 		
-		// Send a HTTP GET request.
-		client.print("GET ");
-		client.print("http://actlab.comli.com/application/scripts/recordData.php?");
-		client.print(paramsEncoded);
-		client.println(" HTTP/1.0");
-		client.println();
+		// Decide whether to send a GET or POST HTTP request.
+		if (_HTTP == 0) {
+			// Send a HTTP GET request.
+			client.print("GET ");
+			client.print("http://actlab.comli.com/application/scripts/recordData.php?");
+			client.print(paramsEncoded);
+			client.println(" HTTP/1.0");
+			client.println();
+		}
+		else {
+			// Send a HTTP POST request - Default (should be anyway).
+			client.print("POST ");
+			client.print("http://actlab.comli.com/application/scripts/recordData.php");
+			client.println(" HTTP/1.0");
+			client.println("Content-Type: application/x-www-form-urlencoded");
+			client.println("Content-Length: 21");
+			client.println();
+			client.print(paramsEncoded); // ! - Does this need to be encoded?
+			client.println();
+		}
 		
 		// Disconnect from server.
 		client.stop();
 		client.flush();
 		_serialPrintln("Disconnecting from server.");
-		
 	}
 	// Could not connect to server.
 	else {_serialPrintln("Connection to server failed.");};
