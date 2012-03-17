@@ -21,12 +21,12 @@ ACTLabClass::ACTLabClass () {
 // ACTLab.MAC()
 
 void ACTLabClass::MAC (byte b0,byte b1,byte b2,byte b3,byte b4,byte b5) {
-	_mac[0] = b0;
-	_mac[1] = b1;
-	_mac[2] = b2;
-	_mac[3] = b3;
-	_mac[4] = b4;
-	_mac[5] = b5;
+	_MAC[0] = b0;
+	_MAC[1] = b1;
+	_MAC[2] = b2;
+	_MAC[3] = b3;
+	_MAC[4] = b4;
+	_MAC[5] = b5;
 }
 
 // ACTLab.server()
@@ -42,59 +42,84 @@ void ACTLabClass::server (byte b0,byte b1,byte b2,byte b3) {
 
 void ACTLabClass::startEthernet () {
 	_serialPrintln("Starting Ethernet.");
-	Ethernet.begin(_mac);
+	Ethernet.begin(_MAC);
 	_serialPrintln("Ethernet Started.");
 }
 
 // ACTLab.submitData()
 
-void ACTLabClass::submitData (float t,float i,float iE,float o,float oE) {
-	
-	String params = "t=0&i=1&iE=2&o=3&oE=2";
-	
+void ACTLabClass::submitData (double time,double input, double output) {
+	// Initialize a static (persistant) EthernetClient object, called client.
 	static EthernetClient client;
 	
-	//_serialPrintln(_server);
-	_serialPrintln("connecting...");
+	// Declare the buffers for the three parameters.
+	char param_time[12];
+	char param_input[12];
+	char param_output[12];
 	
-	if (client.connect(_server, 80)) { // port 80 is the default for http
-		_serialPrintln("connected");
+	// Convert the three parameters from doubles to an ASCII representation (/string).
+	dtostre(time,param_time,3,0);
+	dtostre(input,param_input,3,0);
+	dtostre(output,param_output,3,0);
+	
+	// Build up the http request's parameters.
+	char paramsBuffer[50] = {}; // Nice conservative buffer size.
+	strcat(paramsBuffer,"t=");
+	strcat(paramsBuffer,param_time);
+	strcat(paramsBuffer,"&i=");
+	strcat(paramsBuffer,param_input);
+	strcat(paramsBuffer,"&o=");
+	strcat(paramsBuffer,param_output);
+	strcat(paramsBuffer,"\0");
+	String paramsEncoded = paramsBuffer;
+	paramsEncoded.replace("+","%2B");
+	paramsEncoded.replace("-","%2D");
+	
+	// Serial output the parameters in their various forms for info.
+	_serialPrint("time = ");_serialPrintln(param_time);
+	_serialPrint("input = ");_serialPrintln(param_input);
+	_serialPrint("output = ");_serialPrintln(param_output);
+	_serialPrint("paramsBuffer = ");_serialPrintln(paramsBuffer);
+	_serialPrint("paramsEncoded = ");if (_serial) {Serial.println(paramsEncoded);};
+	
+	// Connect to server.
+	_serialPrintln("Connecting to server.");
+	if (client.connect(_server, 80)) { // Port 80 is the default for HTTP.
+		_serialPrintln("Connected to server.");
+		
+		// Send a HTTP GET request.
 		client.print("GET ");
 		client.print("http://actlab.comli.com/application/scripts/recordData.php?");
-		client.print("t=0&i=1&iE=2&o=3&oE=2");
+		client.print(paramsEncoded);
 		client.println(" HTTP/1.0");
 		client.println();
 		
+		// Disconnect from server.
 		client.stop();
 		client.flush();
-		_serialPrintln("disconnecting.");
+		_serialPrintln("Disconnecting from server.");
 		
-	} else {_serialPrintln("Connection Failed.");}
-	
+	}
+	// Could not connect to server.
+	else {_serialPrintln("Connection to server failed.");};
 }
 
 // ACTLab.serial()
 
 void ACTLabClass::serial (int arg) {
-	if (arg==0||arg==1) {_serial = arg;}
-}
-
-// ACTLab.serialTest()
-
-void ACTLabClass::serialTest () {
-	Serial.println("Serial Test!");
+	if (arg==0||arg==1) {_serial = arg;};
 }
 
 // ----------
 
 void ACTLabClass::_serialPrint (char str[]) {
-	if (_serial) {Serial.print(str);}
+	if (_serial) {Serial.print(str);};
 }
 
 // ----------
 
 void ACTLabClass::_serialPrintln (char str[]) {
-	if (_serial) {Serial.println(str);}
+	if (_serial) {Serial.println(str);};
 }
 
 // Initialize an ACTLab object.

@@ -12,7 +12,6 @@
 
 // Declare (and spec out) the ACTLabClass class.
 class ACTLabClass {
-	
 	// Public methods and properties.
 	public:
 		// Constructor method.
@@ -22,24 +21,21 @@ class ACTLabClass {
 		void MAC(byte b0,byte b1,byte b2,byte b3,byte b4,byte b5);
 		void server(byte b0,byte b1,byte b2,byte b3);
 		void startEthernet();
-		void submitData(float t,float i,float iE,float o,float oE);
+		void submitData(double time,double input, double output);
 		void serial(int arg);
-		void serialTest();
 		
 		// Public properties.
 	
 	// Private methods and properties.
 	private:
-		
 		// Private methods.
 		void _serialPrint(char str[]);
 		void _serialPrintln(char str[]);
 		
 		// Private properties.
-		byte _mac[6];
+		byte _MAC[6];
 		byte _server[4];
 		int _serial;
-	
 };
 
 // Code to remove the need to initialize an ACTLab
