@@ -20,6 +20,7 @@ class ACTLabClass {
 		// Public methods.
 		void MAC(byte b0,byte b1,byte b2,byte b3,byte b4,byte b5);
 		void server(byte b0,byte b1,byte b2,byte b3);
+		void rig(String rig);
 		void HTTP(int arg);
 		void startEthernet();
 		void submitData(double time,double input, double output);
@@ -36,8 +37,9 @@ class ACTLabClass {
 		// Private properties.
 		byte _MAC[6];
 		byte _server[4];
-		int _HTTP;
-		int _serial;
+		char _rig[16];
+		int _HTTP;			// 0 = GET; 1 = POST; Default - 1.
+		int _serial;		// 0 = OFF; 1 = ON; Default - 0.
 };
 
 // Code to remove the need to initialize an ACTLab
