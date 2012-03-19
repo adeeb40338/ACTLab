@@ -23,7 +23,6 @@ class ACTLabClass {
 		void rig(String rig);
 		void HTTP(int arg);
 		void startEthernet();
-		void instruction();
 		void submitData(double time,double input, double output);
 		void serial(int arg);
 		
@@ -32,7 +31,6 @@ class ACTLabClass {
 	// Private methods and properties.
 	private:
 		// Private methods.
-		char _extractInstruction();
 		void _serialPrint(char str[]);
 		void _serialPrintln(char str[]);
 		
@@ -40,8 +38,6 @@ class ACTLabClass {
 		byte _MAC[6];
 		byte _server[4];
 		char _rig[16];
-		char _instruction[5];
-		char _parameters[100];
 		int _HTTP;			// 0 = GET; 1 = POST; Default - 1.
 		int _serial;		// 0 = OFF; 1 = ON; Default - 0.
 };
