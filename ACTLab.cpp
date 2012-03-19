@@ -15,7 +15,7 @@ ACTLabClass::ACTLabClass () {
 	// Set private properties.
 	MAC(0x90,0xA2,0xDA,0x00,0x7F,0xAB);
 	server(31,170,160,87);
-	_HTTP = 1;
+	_HTTP = 0;
 	_serial = 0;
 }
 
@@ -37,12 +37,6 @@ void ACTLabClass::server (byte b0,byte b1,byte b2,byte b3) {
 	_server[1] = b1;
 	_server[2] = b2;
 	_server[3] = b3;
-}
-
-// ACTLab.rig()
-
-void ACTLabClass::rig (String rig) {
-	rig.toCharArray(_rig,16);
 }
 
 // ACTLab.HTTP()
@@ -76,10 +70,8 @@ void ACTLabClass::submitData (double time,double input, double output) {
 	dtostre(output,param_output,3,0);
 	
 	// Build up the http request's parameters.
-	char paramsBuffer[60] = {}; // Nice conservative buffer size.
-	strcat(paramsBuffer,"rig=");
-	strcat(paramsBuffer,_rig);
-	strcat(paramsBuffer,"&t=");
+	char paramsBuffer[50] = {}; // Nice conservative buffer size.
+	strcat(paramsBuffer,"t=");
 	strcat(paramsBuffer,param_time);
 	strcat(paramsBuffer,"&i=");
 	strcat(paramsBuffer,param_input);
@@ -103,7 +95,7 @@ void ACTLabClass::submitData (double time,double input, double output) {
 		_serialPrintln("Connected to server.");
 		
 		// Decide whether to send a GET or POST HTTP request.
-		if (_HTTP==0) {
+		if (_HTTP == 0) {
 			// Send a HTTP GET request.
 			client.print("GET ");
 			client.print("http://actlab.comli.com/application/scripts/recordData.php?");
@@ -117,8 +109,7 @@ void ACTLabClass::submitData (double time,double input, double output) {
 			client.print("http://actlab.comli.com/application/scripts/recordData.php");
 			client.println(" HTTP/1.0");
 			client.println("Content-Type: application/x-www-form-urlencoded");
-			client.print("Content-Length: ");
-			client.println(paramsEncoded.length());
+			client.println("Content-Length: 21");
 			client.println();
 			client.print(paramsEncoded); // ! - Does this need to be encoded?
 			client.println();
