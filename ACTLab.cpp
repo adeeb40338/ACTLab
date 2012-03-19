@@ -59,6 +59,89 @@ void ACTLabClass::startEthernet () {
 	_serialPrintln("Ethernet Started.");
 }
 
+// ACTLab.instruction()
+
+void ACTLabClass::instruction () {
+	// Initialize a static (persistant) EthernetClient object, called client.
+	static EthernetClient client;
+	
+	// Connect to server.
+	_serialPrintln("Connecting to server.");
+	if (client.connect(_server, 80)) { // Port 80 is the default for HTTP.
+		_serialPrintln("Connected to server.");
+		
+		// Decide whether to send a GET or POST HTTP request.
+		//if (_HTTP==0) {
+			// Send a HTTP GET request.
+			client.print("GET ");
+			client.print("http://actlab.comli.com/application/scripts/instruction.php?");
+			//client.print(paramsEncoded);
+			client.println(" HTTP/1.0");
+			client.println();
+		//}
+		//else {
+			// Send a HTTP POST request - Default (should be anyway).
+			/*client.print("POST ");
+			client.print("http://actlab.comli.com/application/scripts/instruction.php");
+			client.println(" HTTP/1.0");
+			client.println("Content-Type: application/x-www-form-urlencoded");
+			client.print("Content-Length: ");
+			client.println(paramsEncoded.length());
+			client.println();
+			client.print(paramsEncoded); // ! - Does this need to be encoded?
+			client.println();*/
+		//}
+		
+		//_extractInstruction();
+		
+		
+		// Variable declarations.
+		/*char c;
+		int status_instruction = 0;		// 0 = Not started. 1 = Started. 2 = Ended.
+		int status_parameters = 0;		// 0 = Not started. 1 = Started. 2 = Ended.
+		
+		// Clear relevant private properties.
+		memset( &_instruction,0,5);
+		memset( &_parameters,0,100);
+		
+		// While client is available loop.
+		while (client.available()) {
+			// Get next character.
+			c = client.read();
+			
+			// If c = instruction bracket start.
+			if (c=='{') {status_instruction=1;};
+			// If c = instruction bracket end.
+			if (c=='}') {status_instruction=2;};
+			// If c = parameters bracket start.
+			if (c=='[') {status_parameters=1;};
+			// If c = parameters bracket end.
+			if (c==']') {status_parameters=2;};
+			
+			// Upgrade c char to string in a temp variable.
+			char temp[2] = {c,'\0'};
+			
+			// If reading instruction.
+			strcat(_instruction,temp);
+			// If reading parameters.
+			strcat(_parameters,temp);
+		};
+		
+		_serialPrintln(_instruction);
+		_serialPrintln(_parameters);
+		
+		*/
+		
+		
+		
+		// Disconnect from server.
+		if (client.available()) {client.stop();client.flush();};
+		_serialPrintln("Disconnected from server.");
+	}
+	// Could not connect to server.
+	else {_serialPrintln("Connection to server failed.");};
+}
+
 // ACTLab.submitData()
 
 void ACTLabClass::submitData (double time,double input, double output) {
@@ -125,9 +208,8 @@ void ACTLabClass::submitData (double time,double input, double output) {
 		}
 		
 		// Disconnect from server.
-		client.stop();
-		client.flush();
-		_serialPrintln("Disconnecting from server.");
+		if (client.available()) {client.stop();client.flush();};
+		_serialPrintln("Disconnected from server.");
 	}
 	// Could not connect to server.
 	else {_serialPrintln("Connection to server failed.");};
@@ -137,6 +219,12 @@ void ACTLabClass::submitData (double time,double input, double output) {
 
 void ACTLabClass::serial (int arg) {
 	if (arg==0||arg==1) {_serial = arg;};
+}
+
+// ----------
+
+char ACTLabClass::_extractInstruction () {
+
 }
 
 // ----------
