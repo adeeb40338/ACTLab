@@ -59,6 +59,178 @@ void ACTLabClass::startEthernet () {
 	_serialPrintln("Ethernet Started.");
 }
 
+// ACTLab.checkForInstruction()
+
+bool ACTLabClass::checkForInstruction () {
+	// Initialize a static (persistant) EthernetClient object, called client.
+	static EthernetClient client;		
+	
+	// Variable declarations.
+	bool rtn = false;
+	bool whileBool = true;
+	int status_experiment = 0;		// 0 = Not started. 1 = Started. 2 = Ended.
+	int status_parameters = 0;		// 0 = Not started. 1 = Started. 2 = Ended.
+	char experimentBuffer[8] = {};
+	char parametersBuffer[128] = {};
+	char *p_pos_1;
+	char *p_pos_2 = parametersBuffer;
+	char *p_pos_3;
+	char *p_param;
+	int _parametersPos = 0;
+	
+	// Connect to server.
+	_serialPrintln("Connecting to server.");
+	if (client.connect(_server, 80)) { // Port 80 is the default for HTTP.
+		_serialPrintln("Connected to server.");
+		
+		// Build up the http request's parameters.
+		char paramsBuffer[60] = {}; // Nice conservative buffer size.
+		strcat(paramsBuffer,"rig=");
+		strcat(paramsBuffer,_rig);
+		strcat(paramsBuffer,"&action=check");
+		strcat(paramsBuffer,"\0");
+		String paramsEncoded = paramsBuffer;
+		paramsEncoded.replace("+","%2B");
+		paramsEncoded.replace("-","%2D");
+		
+		// Decide whether to send a GET or POST HTTP request.
+		if (_HTTP==0) {
+			// Send a HTTP GET request.
+			client.print("GET ");
+			client.print("http://actlab.comli.com/application/scripts/instruction.php?");
+			client.print(paramsEncoded);
+			client.println(" HTTP/1.0");
+			client.println();
+		} else {
+			// Send a HTTP POST request - Default (should be anyway).
+			client.print("POST ");
+			client.print("http://actlab.comli.com/application/scripts/instruction.php");
+			client.println(" HTTP/1.0");
+			client.println("Content-Type: application/x-www-form-urlencoded");
+			client.print("Content-Length: ");
+			client.println(paramsEncoded.length());
+			client.println();
+			client.print(paramsEncoded); // ! - Does this need to be encoded?
+			client.println();
+		};
+		
+		while(whileBool){
+			// Check if there are incomming bytes from the server.
+			if (client.available()) {
+				// Get the next character.
+				char c = client.read();
+				
+				// Check if the character is not a bracket.
+				if (c!='{'&&c!='}'&&c!='['&&c!=']') {
+					// Upgrade c char to string in a temp variable.
+					char temp[2] = {c,'\0'};
+					
+					// If reading experiment.
+					if (status_experiment==1) {strcat(experimentBuffer,temp);};
+					// If reading parameters.
+					if (status_parameters==1) {strcat(parametersBuffer,temp);};
+				};
+				
+				// If c = experiment bracket start.
+				if (c=='{') {status_experiment=1;};
+				// If c = experiment bracket end.
+				if (c=='}') {status_experiment=2;};
+				// If c = parameters bracket start.
+				if (c=='[') {status_parameters=1;};
+				// If c = parameters bracket end.
+				if (c==']') {status_parameters=2;rtn = true;};
+			};
+			
+			// If the server has disconnected, stop the while loop.
+			if (!client.connected()) {whileBool = false;};
+		};
+		
+		// If instructions successfully recieved, process them.
+		if (rtn) {
+			// Convert the experiment number from string to double (then to int via equality).
+			_experiment = strtod(experimentBuffer,&p_pos_1);
+			
+			// Clear the _parameters array.
+			for (int i = 0; i < 10; i++) {_parameters[i] = NULL;};
+			
+			// Process the parameters to doubles.
+			while ((p_param = strtok_r(p_pos_2, ",", &p_pos_2)) != NULL) { // Delimiter: comma.
+				_parameters[_parametersPos] = strtod(p_param,&p_pos_3);
+				_parametersPos ++;
+			};
+		};
+		
+		// Disconnect from server.
+		client.stop();
+		client.flush();
+		_serialPrintln("Disconnected from server.");
+		
+		// If instructions successfully recieved, let server know.
+		if (rtn) {
+			// Connect to server(2).
+			_serialPrintln("Connecting to server(2).");
+			if (client.connect(_server, 80)) { // Port 80 is the default for HTTP.
+				_serialPrintln("Connected to server(2).");
+				
+				// Build up the http request's parameters.
+				char paramsBuffer[60] = {}; // Nice conservative buffer size.
+				strcat(paramsBuffer,"rig=");
+				strcat(paramsBuffer,_rig);
+				strcat(paramsBuffer,"&action=received");
+				strcat(paramsBuffer,"\0");
+				String paramsEncoded = paramsBuffer;
+				paramsEncoded.replace("+","%2B");
+				paramsEncoded.replace("-","%2D");
+				
+				// Decide whether to send a GET or POST HTTP request.
+				if (_HTTP==0) {
+					// Send a HTTP GET request.
+					client.print("GET ");
+					client.print("http://actlab.comli.com/application/scripts/instruction.php?");
+					client.print(paramsEncoded);
+					client.println(" HTTP/1.0");
+					client.println();
+				} else {
+					// Send a HTTP POST request - Default (should be anyway).
+					client.print("POST ");
+					client.print("http://actlab.comli.com/application/scripts/instruction.php");
+					client.println(" HTTP/1.0");
+					client.println("Content-Type: application/x-www-form-urlencoded");
+					client.print("Content-Length: ");
+					client.println(paramsEncoded.length());
+					client.println();
+					client.print(paramsEncoded); // ! - Does this need to be encoded?
+					client.println();
+				};
+				
+				// Disconnect from server.
+				client.stop();
+				client.flush();
+				_serialPrintln("Disconnecting from server(2).");
+			}
+			// Could not connect to server.
+			else {_serialPrintln("Connection to server failed(2).");};
+		};
+	}
+	// Could not connect to server.
+	else {_serialPrintln("Connection to server failed.");};
+	
+	// Return outcome.
+	return rtn;
+}
+
+// ACTLab.getExperimentNumber()
+
+int ACTLabClass::getExperimentNumber () {
+	return _experiment;
+}
+
+// ACTLab.getParameter()
+
+double ACTLabClass::getParameter (int number) {
+	return _parameters[number];
+}
+
 // ACTLab.submitData()
 
 void ACTLabClass::submitData (double time,double input, double output) {
@@ -110,8 +282,7 @@ void ACTLabClass::submitData (double time,double input, double output) {
 			client.print(paramsEncoded);
 			client.println(" HTTP/1.0");
 			client.println();
-		}
-		else {
+		} else {
 			// Send a HTTP POST request - Default (should be anyway).
 			client.print("POST ");
 			client.print("http://actlab.comli.com/application/scripts/recordData.php");
@@ -122,7 +293,7 @@ void ACTLabClass::submitData (double time,double input, double output) {
 			client.println();
 			client.print(paramsEncoded); // ! - Does this need to be encoded?
 			client.println();
-		}
+		};
 		
 		// Disconnect from server.
 		client.stop();

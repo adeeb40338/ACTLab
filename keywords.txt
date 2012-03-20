@@ -4,5 +4,8 @@ server	KEYWORD2
 rig	KEYWORD2
 HTTP	KEYWORD2
 startEthernet	KEYWORD2
+checkForInstruction	KEYWORD2
+getExperimentNumber	KEYWORD2
+getParameter	KEYWORD2
 submitData	KEYWORD2
 serial	KEYWORD2

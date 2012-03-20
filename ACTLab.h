@@ -23,6 +23,9 @@ class ACTLabClass {
 		void rig(String rig);
 		void HTTP(int arg);
 		void startEthernet();
+		bool checkForInstruction();
+		int getExperimentNumber();
+		double getParameter(int number);
 		void submitData(double time,double input, double output);
 		void serial(int arg);
 		
@@ -35,11 +38,13 @@ class ACTLabClass {
 		void _serialPrintln(char str[]);
 		
 		// Private properties.
-		byte _MAC[6];
-		byte _server[4];
-		char _rig[16];
-		int _HTTP;			// 0 = GET; 1 = POST; Default - 1.
-		int _serial;		// 0 = OFF; 1 = ON; Default - 0.
+		byte	_MAC[6];
+		byte	_server[4];
+		char	_rig[16];
+		int		_experiment;
+		double	_parameters[10];
+		int		_HTTP;		// 0 = GET; 1 = POST; Default - 1.
+		int		_serial;	// 0 = OFF; 1 = ON; Default - 0.
 };
 
 // Code to remove the need to initialize an ACTLab
