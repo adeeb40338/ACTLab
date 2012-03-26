@@ -54,9 +54,13 @@ void ACTLabClass::HTTP (int arg) {
 // ACTLab.startEthernet()
 
 void ACTLabClass::startEthernet () {
-	_serialPrintln("Starting Ethernet.");
-	Ethernet.begin(_MAC);
-	_serialPrintln("Ethernet Started.");
+	_serialPrintln("Starting ethernet.");
+	//Ethernet.begin(_MAC);
+	if (Ethernet.begin(_MAC) == 0) {
+		Serial.println("Failed to start ethernet.");
+		// For now SD card is not in use.
+		pinMode(4,OUTPUT); digitalWrite(4,HIGH);
+	} else { _serialPrintln("Ethernet started.");};
 }
 
 // ACTLab.checkForInstruction()
