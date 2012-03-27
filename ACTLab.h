@@ -28,8 +28,9 @@ class ACTLabClass {
 		int		getExperimentNumber();
 		double	getParameter(int number);
 		void	submitData(double time, double reference, double input, double output);
+		void	dataBufferLocation(char location[]);
 		void	clearDataBuffer();
-		void	addToDataBuffer();
+		void	addToDataBuffer(double time, double reference, double input, double output);
 		void	submitDataBuffer();
 		void	serial(int arg);
 		
@@ -48,6 +49,7 @@ class ACTLabClass {
 		int		_experiment;
 		double	_parameters[10];
 		int		_HTTP;		// 0 = GET; 1 = POST; Default - 1.
+		int		_dataBufferLocation	// 0 = EEPROM; 1 = SD; Default - 1.
 		int		_serial;	// 0 = OFF; 1 = ON; Default - 0.
 };
 

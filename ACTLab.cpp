@@ -17,6 +17,7 @@ ACTLabClass::ACTLabClass () {
 	MAC(0x90,0xA2,0xDA,0x00,0x7F,0xAB);
 	server(31,170,160,87);
 	_HTTP = 1;
+	_dataBufferLocation = 1;
 	_serial = 0;
 }
 
@@ -314,6 +315,11 @@ void ACTLabClass::submitData (double time, double reference, double input, doubl
 	else {_serialPrintln("Connection to server failed.");};
 }
 
+// ACTLab.dataBufferLocation()
+
+void ACTLabClass::dataBufferLocation (char location[]) { 
+}
+
 // ACTLab.clearDataBuffer()
 
 void ACTLabClass::clearDataBuffer () { 
@@ -321,7 +327,7 @@ void ACTLabClass::clearDataBuffer () {
 
 // ACTLab.addToDataBuffer()
 
-void ACTLabClass::addToDataBuffer () {
+void ACTLabClass::addToDataBuffer (double time, double reference, double input, double output) {
 }
 
 // ACTLab.submitDataBuffer()
