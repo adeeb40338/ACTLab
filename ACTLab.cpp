@@ -1,5 +1,6 @@
 // Include the Arduino Library - to access the standard
-// types and constants of the Arduino language.
+// types and constants of the Arduino language. Also include
+// the Ethernet Library to access Ethernet Shield methods.
 
 #include <Arduino.h>
 #include <Ethernet.h>
@@ -237,17 +238,19 @@ double ACTLabClass::getParameter (int number) {
 
 // ACTLab.submitData()
 
-void ACTLabClass::submitData (double time,double input, double output) {
+void ACTLabClass::submitData (double time, double reference, double input, double output) {
 	// Initialize a static (persistant) EthernetClient object, called client.
 	static EthernetClient client;
 	
 	// Declare the buffers for the three parameters.
 	char param_time[12];
+	char param_reference[12];
 	char param_input[12];
 	char param_output[12];
 	
 	// Convert the three parameters from doubles to an ASCII representation (/string).
 	dtostre(time,param_time,3,0);
+	dtostre(reference,param_reference,3,0);
 	dtostre(input,param_input,3,0);
 	dtostre(output,param_output,3,0);
 	
@@ -257,6 +260,8 @@ void ACTLabClass::submitData (double time,double input, double output) {
 	strcat(paramsBuffer,_rig);
 	strcat(paramsBuffer,"&t=");
 	strcat(paramsBuffer,param_time);
+	strcat(paramsBuffer,"&r=");
+	strcat(paramsBuffer,param_reference);
 	strcat(paramsBuffer,"&i=");
 	strcat(paramsBuffer,param_input);
 	strcat(paramsBuffer,"&o=");
@@ -268,6 +273,7 @@ void ACTLabClass::submitData (double time,double input, double output) {
 	
 	// Serial output the parameters in their various forms for info.
 	_serialPrint("time = ");_serialPrintln(param_time);
+	_serialPrint("reference = ");_serialPrintln(param_reference);
 	_serialPrint("input = ");_serialPrintln(param_input);
 	_serialPrint("output = ");_serialPrintln(param_output);
 	_serialPrint("paramsBuffer = ");_serialPrintln(paramsBuffer);
@@ -306,6 +312,21 @@ void ACTLabClass::submitData (double time,double input, double output) {
 	}
 	// Could not connect to server.
 	else {_serialPrintln("Connection to server failed.");};
+}
+
+// ACTLab.clearDataBuffer()
+
+void ACTLabClass::clearDataBuffer () { 
+}
+
+// ACTLab.addToDataBuffer()
+
+void ACTLabClass::addToDataBuffer () {
+}
+
+// ACTLab.submitDataBuffer()
+
+void ACTLabClass::submitDataBuffer () {
 }
 
 // ACTLab.serial()

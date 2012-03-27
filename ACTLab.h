@@ -5,7 +5,8 @@
 #define ACTLab_h
 
 // Include the Arduino Library - to access the standard
-// types and constants of the Arduino language.
+// types and constants of the Arduino language. Also include
+// the Ethernet Library to access Ethernet Shield methods.
 
 #include <Arduino.h>
 #include <Ethernet.h>
@@ -26,7 +27,10 @@ class ACTLabClass {
 		bool	checkForInstruction();
 		int		getExperimentNumber();
 		double	getParameter(int number);
-		void	submitData(double time,double input, double output);
+		void	submitData(double time, double reference, double input, double output);
+		void	clearDataBuffer();
+		void	addToDataBuffer();
+		void	submitDataBuffer();
 		void	serial(int arg);
 		
 		// Public properties.
