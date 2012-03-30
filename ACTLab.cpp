@@ -1,24 +1,29 @@
-// Include the Arduino Library - to access the standard
-// types and constants of the Arduino language. Also include
-// the Ethernet Library to access Ethernet Shield methods.
-
-#include <Arduino.h>
-#include <Ethernet.h>
-
 // Include the ACTLab header file where the class methods
-// and properties are declared.
+// and properties are declared (and defined), as well as
+// any required libraries.
 
 #include <ACTLab.h>
 
-// Constructor method.
+// ======================================================================
+// =================================================== Constructor method
 
 ACTLabClass::ACTLabClass () {
-	// Set private properties.
-	MAC(0x90,0xA2,0xDA,0x00,0x7F,0xAB);
-	server(31,170,160,87);
+	// Set private properties (with default values).
+	MAC(0x90,0xA2,0xDA,0x00,0x7F,0xAB);	// Adeeb's E.S.'s MAC address.
+	_SDBuffer = 0;
+	server(31,170,160,87);				// 000webhost server.
 	_HTTP = 1;
-	_dataBufferLocation = 1;
+	_SDPin = 4;							// SD CS for Ethernet Shield.
 	_serial = 0;
+}
+
+// ======================================================================
+// ================================================ Configuration Methods
+
+// ACTLab.rig()
+
+void ACTLabClass::rig (String rig) {
+	rig.toCharArray(_rig,16);
 }
 
 // ACTLab.MAC()
@@ -32,6 +37,12 @@ void ACTLabClass::MAC (byte b0,byte b1,byte b2,byte b3,byte b4,byte b5) {
 	_MAC[5] = b5;
 }
 
+// ACTLab.SDBuffer()
+
+void ACTLabClass::SDBuffer (int arg) {
+	if (arg==0||arg==1) {_SDBuffer = arg;};
+}
+
 // ACTLab.server()
 
 void ACTLabClass::server (byte b0,byte b1,byte b2,byte b3) {
@@ -41,28 +52,51 @@ void ACTLabClass::server (byte b0,byte b1,byte b2,byte b3) {
 	_server[3] = b3;
 }
 
-// ACTLab.rig()
-
-void ACTLabClass::rig (String rig) {
-	rig.toCharArray(_rig,16);
-}
-
 // ACTLab.HTTP()
 
 void ACTLabClass::HTTP (int arg) {
 	if (arg==0||arg==1) {_HTTP = arg;};
 }
 
-// ACTLab.startEthernet()
+// ACTLab.SDPin()
 
-void ACTLabClass::startEthernet () {
-	_serialPrintln("Starting ethernet.");
-	//Ethernet.begin(_MAC);
-	if (Ethernet.begin(_MAC) == 0) {
-		Serial.println("Failed to start ethernet.");
-		// For now SD card is not in use.
-		pinMode(4,OUTPUT); digitalWrite(4,HIGH);
-	} else { _serialPrintln("Ethernet started.");};
+void ACTLabClass::SDPin (int arg) {
+	_SDPin = arg;
+}
+
+// ACTLab.serialMessages()
+
+void ACTLabClass::serialMessages (int arg) {
+	if (arg==0||arg==1) {_serial = arg;};
+}
+
+// ======================================================================
+// ================================================ Core Ethernet Methods
+	
+// ACTLab.start()
+	
+void ACTLabClass::start () {
+	// Start the ethernet shield.
+	_serialPrintln("Starting ethernet shield.");
+	if (Ethernet.begin(_MAC)) {
+		_serialPrintln("Ethernet shield started.");
+	} else {
+		_serialPrint("Failed to start ethernet shield. ");
+		_serialPrintln("Is the ethernet cable plugged in?");
+	};
+	
+	// Also initialize SD library and card if requested.
+	if (_SDBuffer == 1) {
+		_serialPrintln("Initializing SD library and card.");
+		//pinMode(10, OUTPUT); // Needed? Arduino
+		//pinMode(53, OUTPUT); // Needed? Mega
+		if (SD.begin(_SDPin)) {
+			_serialPrintln("SD library and card initialized.");
+		} else {
+			_serialPrintln("Failed to start SD library and card. ");
+			_serialPrintln("Is there a SD card in the shield?");
+		};
+	};
 }
 
 // ACTLab.checkForInstruction()
@@ -85,9 +119,9 @@ bool ACTLabClass::checkForInstruction () {
 	int _parametersPos = 0;
 	
 	// Connect to server.
-	_serialPrintln("Connecting to server.");
+	_serialPrintln("Connecting to server (2).");
 	if (client.connect(_server, 80)) { // Port 80 is the default for HTTP.
-		_serialPrintln("Connected to server.");
+		_serialPrintln("Connected to server (2).");
 		
 		// Build up the http request's parameters.
 		char paramsBuffer[60] = {}; // Nice conservative buffer size.
@@ -169,57 +203,24 @@ bool ACTLabClass::checkForInstruction () {
 		// Disconnect from server.
 		client.stop();
 		client.flush();
-		_serialPrintln("Disconnected from server.");
+		_serialPrintln("Disconnected from server (2).");
 		
 		// If instructions successfully recieved, let server know.
 		if (rtn) {
-			// Connect to server(2).
-			_serialPrintln("Connecting to server(2).");
-			if (client.connect(_server, 80)) { // Port 80 is the default for HTTP.
-				_serialPrintln("Connected to server(2).");
-				
-				// Build up the http request's parameters.
-				char paramsBuffer[60] = {}; // Nice conservative buffer size.
-				strcat(paramsBuffer,"rig=");
-				strcat(paramsBuffer,_rig);
-				strcat(paramsBuffer,"&action=received");
-				strcat(paramsBuffer,"\0");
-				String paramsEncoded = paramsBuffer;
-				paramsEncoded.replace("+","%2B");
-				paramsEncoded.replace("-","%2D");
-				
-				// Decide whether to send a GET or POST HTTP request.
-				if (_HTTP==0) {
-					// Send a HTTP GET request.
-					client.print("GET ");
-					client.print("http://actlab.comli.com/application/scripts/instruction.php?");
-					client.print(paramsEncoded);
-					client.println(" HTTP/1.0");
-					client.println();
-				} else {
-					// Send a HTTP POST request - Default (should be anyway).
-					client.print("POST ");
-					client.print("http://actlab.comli.com/application/scripts/instruction.php");
-					client.println(" HTTP/1.0");
-					client.println("Content-Type: application/x-www-form-urlencoded");
-					client.print("Content-Length: ");
-					client.println(paramsEncoded.length());
-					client.println();
-					client.print(paramsEncoded); // ! - Does this need to be encoded?
-					client.println();
-				};
-				
-				// Disconnect from server.
-				client.stop();
-				client.flush();
-				_serialPrintln("Disconnecting from server(2).");
-			}
-			// Could not connect to server.
-			else {_serialPrintln("Connection to server failed(2).");};
+			// Build up the http request's parameters.
+			char paramsBuffer[60] = {}; // Nice conservative buffer size.
+			strcat(paramsBuffer,"rig=");
+			strcat(paramsBuffer,_rig);
+			strcat(paramsBuffer,"&action=received");
+			strcat(paramsBuffer,"\0");
+			
+			// Pass on data to _ethernetClient for submission.
+			_ethernetClient("http://actlab.comli.com/application/scripts/instruction.php",paramsBuffer);	
+			
 		};
 	}
 	// Could not connect to server.
-	else {_serialPrintln("Connection to server failed.");};
+	else {_serialPrintln("Connection to server failed (2).");};
 	
 	// Return outcome.
 	return rtn;
@@ -240,16 +241,13 @@ double ACTLabClass::getParameter (int number) {
 // ACTLab.submitData()
 
 void ACTLabClass::submitData (double time, double reference, double input, double output) {
-	// Initialize a static (persistant) EthernetClient object, called client.
-	static EthernetClient client;
-	
-	// Declare the buffers for the three parameters.
+	// Declare the buffers for the four parameters.
 	char param_time[12];
 	char param_reference[12];
 	char param_input[12];
 	char param_output[12];
 	
-	// Convert the three parameters from doubles to an ASCII representation (/string).
+	// Convert the four parameters from doubles to an ASCII representation (/string).
 	dtostre(time,param_time,3,0);
 	dtostre(reference,param_reference,3,0);
 	dtostre(input,param_input,3,0);
@@ -268,9 +266,6 @@ void ACTLabClass::submitData (double time, double reference, double input, doubl
 	strcat(paramsBuffer,"&o=");
 	strcat(paramsBuffer,param_output);
 	strcat(paramsBuffer,"\0");
-	String paramsEncoded = paramsBuffer;
-	paramsEncoded.replace("+","%2B");
-	paramsEncoded.replace("-","%2D");
 	
 	// Serial output the parameters in their various forms for info.
 	_serialPrint("time = ");_serialPrintln(param_time);
@@ -278,6 +273,164 @@ void ACTLabClass::submitData (double time, double reference, double input, doubl
 	_serialPrint("input = ");_serialPrintln(param_input);
 	_serialPrint("output = ");_serialPrintln(param_output);
 	_serialPrint("paramsBuffer = ");_serialPrintln(paramsBuffer);
+	
+	// Pass on data to _ethernetClient for submission.
+	_ethernetClient("http://actlab.comli.com/application/scripts/recordData.php",paramsBuffer);
+}
+
+// ======================================================================
+// ==================================================== SD Buffer Methods
+
+// ACTLab.SDBuffer_clear()
+
+void ACTLabClass::SDBuffer_clear () {
+	// Delete SDBuffer file if exists.
+	if (SD.exists("SDBuffer.txt")) {
+		SD.remove("SDBuffer.txt");
+		_serialPrintln("SDBuffer.txt deleted.");
+	};
+}
+
+// ACTLab.SDBuffer_add()
+
+void ACTLabClass::SDBuffer_add (double time, double reference, double input, double output) {
+	// Create File object.
+	File fileObject;
+	
+	// Declare the buffers for the four parameters.
+	char param_time[12];
+	char param_reference[12];
+	char param_input[12];
+	char param_output[12];
+	
+	// Convert the four parameters from doubles to an ASCII representation (/string).
+	dtostre(time,param_time,3,0);
+	dtostre(reference,param_reference,3,0);
+	dtostre(input,param_input,3,0);
+	dtostre(output,param_output,3,0);
+	
+	// Build up the line to add to the text file.
+	char paramsBuffer[60] = {}; // Nice conservative buffer size.
+	strcat(paramsBuffer,param_time);
+	strcat(paramsBuffer,";");
+	strcat(paramsBuffer,param_reference);
+	strcat(paramsBuffer,";");
+	strcat(paramsBuffer,param_input);
+	strcat(paramsBuffer,";");
+	strcat(paramsBuffer,param_output);
+	
+	fileObject = SD.open("SDBuffer.txt", FILE_WRITE);
+	if (fileObject) {
+		fileObject.println(paramsBuffer);
+		fileObject.close();
+	};
+}
+
+// ACTLab.SDBuffer_submit()
+
+void ACTLabClass::SDBuffer_submit () {
+	// Variables
+	int newln = 1;		// Is the current character the first in a new line.
+	int param = 0;		// Which parameter is currently being read.
+						// 		0 = Time.
+						// 		1 = Reference.
+						// 		2 = Input.
+						// 		3 = Output.
+	int dataSets = 0;		// How many data sets have been read so far.
+	int dataSetsLim = 10;	// Max. num. of data sets to be submitted in one go.
+	char paramsBuffer[600] = {};	// ~ dataSetsLim * 60.
+	strcat(paramsBuffer,"rig=");
+	strcat(paramsBuffer,_rig);
+	char temp[2];
+	int temp2;
+						
+	// Create File object.
+	File fileObject;
+	
+	// Open SDBuffer.txt into object.
+	fileObject = SD.open("SDBuffer.txt");
+	if (fileObject) {
+		// Initiate while loop to read each character in the file, one at a time.
+		while (fileObject.available()) {
+			// Get the character.
+			char c = char(fileObject.read());
+			
+			// If new line started.
+			if (newln == 1) {
+				param = 0;
+				strcat(paramsBuffer,"&t");
+				memset(temp,0,2);temp2=(dataSets+1);temp[0]=((char)temp2);temp[1]='\0';
+				strcat(paramsBuffer,temp);
+				strcat(paramsBuffer,"=");
+				newln = 0;
+			};
+			
+			// If character is a normal one.
+			if ((((char)c)!=';')&&(c!='\n')) {
+				memset(temp,0,2);temp[0]=((char)c);temp[1]='\0';
+				strcat(paramsBuffer,temp);
+			}
+			// If character is a semi-colon.
+			else if (((char)c) == ';') {
+				if (param == 0) {
+					strcat(paramsBuffer,"&r");
+					memset(temp,0,2);temp2=(dataSets+1);temp[0]=((char)temp2);temp[1]='\0';
+					if (dataSets!=0) {strcat(paramsBuffer,temp);};
+					strcat(paramsBuffer,"=");
+				}
+				else if (param == 1) {
+					strcat(paramsBuffer,"&i");
+					memset(temp,0,2);temp2=(dataSets+1);temp[0]=((char)temp2);temp[1]='\0';
+					if (dataSets!=0) {strcat(paramsBuffer,temp);};
+					strcat(paramsBuffer,"=");
+				}
+				else if (param == 2) {
+					strcat(paramsBuffer,"&o");
+					memset(temp,0,2);temp2=(dataSets+1);temp[0]=((char)temp2);temp[1]='\0';
+					if (dataSets!=0) {strcat(paramsBuffer,temp);};
+					strcat(paramsBuffer,"=");
+				};
+				param ++;
+			}
+			// If character is a new line.
+			else if (c == '\n') {
+				newln = 1;
+				dataSets ++;
+				if (dataSets == (dataSetsLim-1)) {
+					_serialPrintln("");
+					_serialPrintln(paramsBuffer);
+					_serialPrintln("");
+					memset(paramsBuffer,0,600);
+					strcat(paramsBuffer,"rig=");
+					strcat(paramsBuffer,_rig);
+					dataSets = 0;
+				};
+			};
+		};
+		
+		// Close the file:
+		fileObject.close();
+	} else {
+		// If the file didn't open.
+		_serialPrintln("Error opening SDBuffer.txt.");
+	};
+}
+
+// ======================================================================
+// ====================================================== Private Methods
+
+// _ethernetClient()
+
+void ACTLabClass::_ethernetClient (char url[], char params[]) {
+	// Initialize a static (persistant) EthernetClient object, called client.
+	static EthernetClient client;
+	
+	// Encode the parameters.
+	String paramsEncoded = params;
+	paramsEncoded.replace("+","%2B");
+	paramsEncoded.replace("-","%2D");
+	
+	// Serial print the encoded parameters for info.
 	_serialPrint("paramsEncoded = ");if (_serial) {Serial.println(paramsEncoded);};
 	
 	// Connect to server.
@@ -289,14 +442,15 @@ void ACTLabClass::submitData (double time, double reference, double input, doubl
 		if (_HTTP==0) {
 			// Send a HTTP GET request.
 			client.print("GET ");
-			client.print("http://actlab.comli.com/application/scripts/recordData.php?");
+			client.print(url);
+			client.print("?");
 			client.print(paramsEncoded);
 			client.println(" HTTP/1.0");
 			client.println();
 		} else {
 			// Send a HTTP POST request - Default (should be anyway).
 			client.print("POST ");
-			client.print("http://actlab.comli.com/application/scripts/recordData.php");
+			client.print(url);
 			client.println(" HTTP/1.0");
 			client.println("Content-Type: application/x-www-form-urlencoded");
 			client.print("Content-Length: ");
@@ -315,39 +469,13 @@ void ACTLabClass::submitData (double time, double reference, double input, doubl
 	else {_serialPrintln("Connection to server failed.");};
 }
 
-// ACTLab.dataBufferLocation()
-
-void ACTLabClass::dataBufferLocation (char location[]) { 
-}
-
-// ACTLab.clearDataBuffer()
-
-void ACTLabClass::clearDataBuffer () { 
-}
-
-// ACTLab.addToDataBuffer()
-
-void ACTLabClass::addToDataBuffer (double time, double reference, double input, double output) {
-}
-
-// ACTLab.submitDataBuffer()
-
-void ACTLabClass::submitDataBuffer () {
-}
-
-// ACTLab.serial()
-
-void ACTLabClass::serial (int arg) {
-	if (arg==0||arg==1) {_serial = arg;};
-}
-
-// ----------
+// _serialPrint()
 
 void ACTLabClass::_serialPrint (char str[]) {
 	if (_serial) {Serial.print(str);};
 }
 
-// ----------
+// _serialPrintln()
 
 void ACTLabClass::_serialPrintln (char str[]) {
 	if (_serial) {Serial.println(str);};
