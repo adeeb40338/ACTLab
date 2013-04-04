@@ -54,7 +54,7 @@ class ACTLabClass {
 		int		_SDBuffer;			// 0 = OFF; 1 = ON; Default - 0.
 		byte	_server[4];
 		int		_HTTP;				// 0 = GET; 1 = POST; Default - 1.
-		int		_SDPin;				// 4 - SD CS is on pin 4 on E.S.
+		int		_SDPin;
 		int		_serial;			// 0 = OFF; 1 = ON; Default - 0.
 		int		_experiment;
 		double	_parameters[10];

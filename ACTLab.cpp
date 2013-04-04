@@ -10,11 +10,11 @@
 ACTLabClass::ACTLabClass () {
 	// Set private properties (with default values).
 	MAC(0x90,0xA2,0xDA,0x00,0x7F,0xAB);	// Adeeb's E.S.'s MAC address.
-	_SDBuffer = 0;
-	server(31,170,160,87);				// 000webhost server.
-	_HTTP = 1;
+	_SDBuffer = 0;						// Default = 0, incase SD card not present.
+	server(31,170,160,87);				// 000webhost.com server.
+	_HTTP = 1;							// Default = 1, (i.e. POST) since it's more secure.
 	_SDPin = 4;							// SD CS for Ethernet Shield.
-	_serial = 0;
+	_serial = 0;						// Default = 0, since only really used for troubleshooting.
 }
 
 // ======================================================================
@@ -85,13 +85,14 @@ void ACTLabClass::start () {
 		_serialPrintln("Is the ethernet cable plugged in?");
 	};
 	
-	// Also initialize SD library and card if requested.
+	// Also initialize SD library and card if requested. Clear SDBuffer.txt as well.
 	if (_SDBuffer == 1) {
 		_serialPrintln("Initializing SD library and card.");
 		//pinMode(10, OUTPUT); // Needed? Arduino
 		//pinMode(53, OUTPUT); // Needed? Mega
 		if (SD.begin(_SDPin)) {
 			_serialPrintln("SD library and card initialized.");
+			SDBuffer_clear();
 		} else {
 			_serialPrintln("Failed to start SD library and card. ");
 			_serialPrintln("Is there a SD card in the shield?");
@@ -287,7 +288,7 @@ void ACTLabClass::SDBuffer_clear () {
 	// Delete SDBuffer file if exists.
 	if (SD.exists("SDBuffer.txt")) {
 		SD.remove("SDBuffer.txt");
-		_serialPrintln("SDBuffer.txt deleted.");
+		_serialPrintln("SDBuffer.txt cleared (really deleted).");
 	};
 }
 
